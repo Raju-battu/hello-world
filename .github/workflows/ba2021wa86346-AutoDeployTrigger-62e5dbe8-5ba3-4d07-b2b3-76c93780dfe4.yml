@@ -1,0 +1,47 @@
+name: Trigger auto deployment for ba2021wa86346
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - '**'
+    - '.github/workflows/ba2021wa86346-AutoDeployTrigger-62e5dbe8-5ba3-4d07-b2b3-76c93780dfe4.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.BA2021WA86346_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.BA2021WA86346_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.BA2021WA86346_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: 
+          registryUsername: ${{ secrets.BA2021WA86346_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.BA2021WA86346_REGISTRY_PASSWORD }}
+          containerAppName: ba2021wa86346
+          resourceGroup: Cloudgroup
+          imageToBuild: default/[parameters('containerAppName')]:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
